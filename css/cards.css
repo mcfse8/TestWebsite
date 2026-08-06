@@ -247,6 +247,11 @@
     color: #cfe9ff;
 }
 
+.axe-detail__link{
+    color: lightskyblue;
+    text-decoration: underline;
+}
+
 /* ---------- Card ---------- */
 
 .card{
