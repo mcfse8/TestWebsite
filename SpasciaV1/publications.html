@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SPASCIA – Space Science & Algorithmics</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
+
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/header.css">
+    <link rel="stylesheet" href="../css/hero.css">
+    <link rel="stylesheet" href="../css/cards.css">
+    <link rel="stylesheet" href="../css/responsive.css">
+    <link rel="stylesheet" href="../css/carousel.css">
+    <link rel="stylesheet" href="../css/texte.css">
+    <link rel="stylesheet" href="../css/publication.css">
+
+
+</head>
+
+<body>
+
+<header>
+
+    <div class="header-inner">
+
+        <div class="nav-left">
+
+            <a href="index.html" class="nav-logo">
+
+                <img src="../Media/logo_spascia.jpg" alt="Spascia">
+
+            </a>
+
+        </div>
+
+        <nav class="nav-center">
+
+            <a href="home.html">Home</a>
+
+            <a href="projects.html">Projects</a>
+
+            <a href="team.html">Our team</a>
+
+            <a href="publications.html">Publications</a>
+
+            <a href="products.html">Products</a>
+
+            <a href="contact.html">Contact</a>
+
+        </nav>
+
+    </div>
+
+</header>
+
+<main>
+
+    <!-- En-tête de la page -->
+    <section class="hero publications-hero">
+
+        <h1>Publications</h1>
+
+        <p>
+            PUBLICATIONS
+        </p>
+
+    </section>
+
+    <!-- Filtres -->
+    <section class="filters">
+
+        <input
+            type="text"
+            id="search"
+            placeholder="Rechercher un titre, un auteur ou un journal..."
+        >
+
+        <select id="yearFilter">
+            <option value="">All dates</option>
+        </select>
+
+        <select id="typeFilter">
+            <option value="">All types</option>
+        </select>
+
+    </section>
+
+    <!-- Statistiques -->
+    <div id="publication-count" class="stats"></div>
+
+    <!-- Contenu généré automatiquement -->
+    <section id="publications">
+
+        <div class="skeleton">
+            Chargement des publications...
+        </div>
+
+    </section>
+
+</main>
+
+<footer>
+    <div class="footer-centered" role="contentinfo">
+
+        <div class="footer-centered__container">
+            
+            <!-- Logo -->
+            <a href="#" class="footer-centered__logo" aria-label="Homepage">
+                <img src="../Media/logo_spascia_white.png">
+            </a>
+</footer>
+
+<script src="../js/utils.js"></script>
+<script src="../js/navigation.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="../js/publication.js"></script>
+
+</body>
+
+</html>
