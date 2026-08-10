@@ -1,8 +1,12 @@
 /**
  * products.js
  * ── DATA TABLE (Products page) ──
- * Récupère les données depuis le fichier CSV statique (généré par un
- * script d'extraction indépendant) et remplit le tableau de la page Products.
+ * Récupère les données depuis data.csv (généré par un script d'extraction
+ * indépendant) et remplit le tableau de la page Products.
+ *
+ * ── MAP ──
+ * Récupère les données depuis plot_data.csv (une seule date) et affiche
+ * les points/clusters sur la carte.
  *
  * Dépend de : parseCSV() (csv.js), escapeHtml() (utils.js),
  * renderDataTablePage() (pagination.js).
@@ -13,6 +17,7 @@
 // ------------------------------------------------------------------
 
 const CSV_FILE = "../data.csv";
+const CSV_PLOT_FILE = "../plot_data.csv"
 
 let monitoringDataLoaded = false;
 
@@ -87,6 +92,40 @@ async function loadMonitoringData(forceRefresh = false) {
   return rows;
 }
 
+// ------------------------------------------------------------------
+// Chargement des données de la carte (plot_data.csv)
+// ------------------------------------------------------------------
+
+async function loadPlotData() {
+
+  let rows = [];
+
+  try {
+
+    const response = await fetch(
+      `${CSV_PLOT_FILE}?t=${Date.now()}`
+    );
+
+    console.log("Status :", response.status);
+    console.log("OK :", response.ok);
+
+    if (!response.ok) {
+      throw new Error(`Erreur HTTP ${response.status}`);
+    }
+
+    const csvText = await response.text();
+
+    rows = parseCSV(csvText);
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+
+  return rows;
+}
+
 
 // ------------------------------------------------------------------
 // Affichage du tableau
@@ -132,7 +171,8 @@ function renderDataTable(rows) {
 // ------------------------------------------------------------------
 
 window.addEventListener("DOMContentLoaded", async () => {
-    console.log("Appel DisplayMap()");
+    console.log("Appel loadMonitoringData() + DisplayMap()");
+    await loadMonitoringData();
     await DisplayMap();
     // await refreshMap();
 });
@@ -144,7 +184,9 @@ const clusterColors = {
     others: "#377eb8",
     volcano: "#984ea3",
     fire_type_1: "#ff7f00",
-    voc: "#ffff33"
+    voc: "#00ffff",
+    calcite : "#ff1493",
+    Unclassified : "#666666"
 };
 
 let map;
@@ -154,8 +196,8 @@ let hullLayer;
 let allData = [];
 
 let currentSpecies = ["C2H2", "C2H4", "CaCO3", "CH3OH", "HCN", "HCOOH", "HNO3", "CO", "CO2", "NH3", "SO2"];
-
-let currentDate = "2026-02-20";
+let currentClusterTypes = Object.keys(clusterColors);
+// let currentClusterTypes = ["fire", "fire_type_1", "volcano", "voc", "others", "calcite", "Unclassified"]
 let currentPeriod = "ALL";
 
 /* Carte */
@@ -173,6 +215,8 @@ function createMap() {
         maxBoundsViscosity: 1.0
     }).setView([46.5, 2.5], 6);
 
+    // OPM
+
     L.tileLayer(
         "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
         {
@@ -180,6 +224,27 @@ function createMap() {
             noWrap: true
         }
     ).addTo(map);
+
+    // CARTO
+
+    // L.tileLayer(
+    //     "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    //     {
+    //         attribution: "&copy; OpenStreetMap &copy; CARTO",
+    //         subdomains: "abcd",
+    //         noWrap: true
+    //     }
+    // ).addTo(map);
+
+    // ESRI
+
+    // L.tileLayer(
+    //     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+    //     {
+    //         attribution: "Tiles &copy; Esri",
+    //         noWrap: true
+    //     }
+    // ).addTo(map);
 
     return map;
 }
@@ -195,7 +260,7 @@ async function DisplayMap() {
 
     // addClusterLegend(map);
 
-    allData = await loadMonitoringData();
+    allData = await loadPlotData();
 
     // Affichage initial
     refreshMap();
@@ -212,9 +277,6 @@ function filterData(data) {
 
     return data.filter(point => {
 
-        const okDate =
-            point.date === currentDate;
-
         const okPeriod =
             currentPeriod === "ALL"
             || point["DAY/NIGHT"] === currentPeriod;
@@ -223,12 +285,12 @@ function filterData(data) {
             currentSpecies.length === 0
             || currentSpecies.some(species => {
 
-                if (!point.cluster_indicators) {
+                if (!point.point_indicators) {
                     return false;
                 }
 
                 const speciesInPoint =
-                    point.cluster_indicators
+                    point.point_indicators
                         .split(",")
                         .map(indicator => {
                             const name = indicator.split(":")[0];
@@ -243,7 +305,9 @@ function filterData(data) {
                 return speciesInPoint.includes(species);
             });
 
-        return okDate && okPeriod && okSpecies;
+        const okTypes = currentClusterTypes.includes(point.cluster_category);
+
+        return okPeriod && okSpecies && okTypes;
     });
 }
 
@@ -317,6 +381,9 @@ function createPopup(point) {
         <b>Catégorie :</b> ${point.cluster_category}<br>
         <b>Pays :</b> ${point["Country/Sea"]}<br>
         <b>Région :</b> ${point.Region}<br>
+        <b>Latitude :</b> ${point.latitude}<br>
+        <b>Longitude :</b> ${point.longitude}<br>
+        <b>Indicateur(s) :</b> ${point.point_indicators}<br>
     `;
 
 }
@@ -438,158 +505,153 @@ function computeHull(points) {
 
 function addMapControls(map) {
 
-    const Control = L.Control.extend({
+    const div = document.getElementById("map-controls");
 
-        onAdd: function () {
+    div.innerHTML = `
+        <div class="filter-section">
 
-            const div = L.DomUtil.create(
-                "div",
-                "map-filter-control"
-            );
+            <div class="filter-title">
+                Période
+            </div>
 
-            div.innerHTML = `
-                <div class="filter-section">
+            <div class="period-buttons">
+                <button id="btnAll">ALL</button>
+                <button id="btnDay">DAY</button>
+                <button id="btnNight">NIGHT</button>
+            </div>
 
-                    <div class="filter-title">
-                        Période
+        </div>
+
+        <div class="filter-section">
+
+            <div class="filter-title">
+                Espèces
+            </div>
+
+            <label>
+                <input
+                    type="checkbox"
+                    class="species-checkbox"
+                    value="C2H2"
+                    checked
+                >
+                C2H2
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    class="species-checkbox"
+                    value="C2H4"
+                    checked
+                >
+                C2H4
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    class="species-checkbox"
+                    value="CaCO3"
+                    checked
+                >
+                CaCO3
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    class="species-checkbox"
+                    value="CH3OH"
+                    checked
+                >
+                CH3OH
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    class="species-checkbox"
+                    value="HCN"
+                    checked
+                >
+                HCN
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    class="species-checkbox"
+                    value="HCOOH"
+                    checked
+                >
+                HCOOH
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    class="species-checkbox"
+                    value="HNO3"
+                    checked
+                >
+                HNO3
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    class="species-checkbox"
+                    value="CO"
+                    checked
+                >
+                CO
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    class="species-checkbox"
+                    value="CO2"
+                    checked
+                >
+                CO2
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    class="species-checkbox"
+                    value="NH3"
+                    checked
+                >
+                NH3
+            </label>
+
+            <label>
+                <input
+                    type="checkbox"
+                    class="species-checkbox"
+                    value="SO2"
+                    checked
+                >
+                SO2
+            </label>
+
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-title">Types de cluster</div>
+            <div class="cluster-legend">
+                ${Object.entries(clusterColors).map(([type, color]) => `
+                    <div class="legend-item" data-type="${type}">
+                        <span class="legend-color" style="background:${color}"></span>
+                        ${type}
                     </div>
-
-                    <div class="period-buttons">
-                        <button id="btnAll">ALL</button>
-                        <button id="btnDay">DAY</button>
-                        <button id="btnNight">NIGHT</button>
-                    </div>
-
-                </div>
-
-                <div class="filter-section">
-
-                    <div class="filter-title">
-                        Espèces
-                    </div>
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="species-checkbox"
-                            value="C2H2"
-                            checked
-                        >
-                        C2H2
-                    </label>
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="species-checkbox"
-                            value="C2H4"
-                            checked
-                        >
-                        C2H4
-                    </label>
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="species-checkbox"
-                            value="CaCO3"
-                            checked
-                        >
-                        CaCO3
-                    </label>
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="species-checkbox"
-                            value="CH3OH"
-                            checked
-                        >
-                        CH3OH
-                    </label>
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="species-checkbox"
-                            value="HCN"
-                            checked
-                        >
-                        HCN
-                    </label>
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="species-checkbox"
-                            value="HCOOH"
-                            checked
-                        >
-                        HCOOH
-                    </label>
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="species-checkbox"
-                            value="HNO3"
-                            checked
-                        >
-                        HNO3
-                    </label>
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="species-checkbox"
-                            value="CO"
-                            checked
-                        >
-                        CO
-                    </label>
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="species-checkbox"
-                            value="CO2"
-                            checked
-                        >
-                        CO2
-                    </label>
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="species-checkbox"
-                            value="NH3"
-                            checked
-                        >
-                        NH3
-                    </label>
-
-                    <label>
-                        <input
-                            type="checkbox"
-                            class="species-checkbox"
-                            value="SO2"
-                            checked
-                        >
-                        SO2
-                    </label>
-
-                </div>
-            `;
-
-            L.DomEvent.disableClickPropagation(div);
-
-            return div;
-        }
-    });
-
-    new Control({
-        position: "topright"
-    }).addTo(map);
+                `).join("")}
+            </div>
+        </div>
+    `;
 
 
     // --------------------------------------------------
@@ -641,6 +703,25 @@ function addMapControls(map) {
 
         });
 
+    // --------------------------------------------------
+    // TYPES
+    // --------------------------------------------------
+
+    document.querySelectorAll(".legend-item").forEach(item => {
+        item.addEventListener("click", () => {
+            const type = item.dataset.type;
+
+            if (currentClusterTypes.includes(type)) {
+                currentClusterTypes = currentClusterTypes.filter(t => t !== type);
+                item.classList.add("inactive");
+            } else {
+                currentClusterTypes.push(type);
+                item.classList.remove("inactive");
+            }
+
+            refreshMap();
+        });
+    });
 
     updatePeriodButtons();
 }
