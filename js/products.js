@@ -153,6 +153,8 @@ let hullLayer;
 
 let allData = [];
 
+let currentSpecies = ["C2H2", "C2H4", "CaCO3", "CH3OH", "HCN", "HCOOH", "HNO3", "CO", "CO2", "NH3", "SO2"];
+
 let currentDate = "2026-02-20";
 let currentPeriod = "ALL";
 
@@ -166,6 +168,7 @@ function createMap() {
     );
 
     const map = L.map("map", {
+        minZoom: 3,
         maxBounds: bounds,
         maxBoundsViscosity: 1.0
     }).setView([46.5, 2.5], 6);
@@ -188,11 +191,19 @@ async function DisplayMap() {
     pointLayer = L.layerGroup().addTo(map);
     hullLayer = L.layerGroup().addTo(map);
 
-    addDayNightControl(map);
+    addMapControls(map);
+
+    // addClusterLegend(map);
 
     allData = await loadMonitoringData();
 
+    // Affichage initial
     refreshMap();
+
+    // Redessine la carte lorsque le zoom change
+    map.on("zoomend", () => {
+        refreshMap();
+    });
 }
 
 /* Filtrage */
@@ -208,10 +219,32 @@ function filterData(data) {
             currentPeriod === "ALL"
             || point["DAY/NIGHT"] === currentPeriod;
 
-        return okDate && okPeriod;
+        const okSpecies =
+            currentSpecies.length === 0
+            || currentSpecies.some(species => {
 
+                if (!point.cluster_indicators) {
+                    return false;
+                }
+
+                const speciesInPoint =
+                    point.cluster_indicators
+                        .split(",")
+                        .map(indicator => {
+                            const name = indicator.split(":")[0];
+                            return name.split("_")[0];
+                        });
+                
+                console.log("species : ", species)
+                console.log("cluster_indicators : ", point.cluster_indicators)
+                console.log("speciesInPoint : ", speciesInPoint)
+                console.log("okSPecies : ", speciesInPoint.includes(species))
+
+                return speciesInPoint.includes(species);
+            });
+
+        return okDate && okPeriod && okSpecies;
     });
-
 }
 
 /* Refresh */
@@ -238,6 +271,16 @@ function getClusterColor(clusterCategory) {
 
 /* Affichage des points */
 
+function getPointRadius() {
+
+    const zoom = map.getZoom();
+
+    if (zoom <= 3) return 0;
+    // if (zoom >= 5) return 50;
+
+    return 3;
+}
+
 function drawPoints(pointLayer, data) {
 
     data.forEach(point => {
@@ -250,7 +293,7 @@ function drawPoints(pointLayer, data) {
                 Number(point.longitude)
             ],
             {
-                radius: 3,
+                radius: getPointRadius(),
                 color,
                 fillColor: color,
                 fillOpacity: 0.8,
@@ -391,61 +434,252 @@ function computeHull(points) {
     );
 }
 
-/* Bouton Day Night */ 
+/* Filtres */ 
 
-function addDayNightControl(map) {
+function addMapControls(map) {
 
     const Control = L.Control.extend({
 
         onAdd: function () {
 
-            const div = L.DomUtil.create("div", "leaflet-bar");
+            const div = L.DomUtil.create(
+                "div",
+                "map-filter-control"
+            );
 
             div.innerHTML = `
-                <button id="btnAll">ALL</button>
-                <button id="btnDay">DAY</button>
-                <button id="btnNight">NIGHT</button>
+                <div class="filter-section">
+
+                    <div class="filter-title">
+                        Période
+                    </div>
+
+                    <div class="period-buttons">
+                        <button id="btnAll">ALL</button>
+                        <button id="btnDay">DAY</button>
+                        <button id="btnNight">NIGHT</button>
+                    </div>
+
+                </div>
+
+                <div class="filter-section">
+
+                    <div class="filter-title">
+                        Espèces
+                    </div>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="species-checkbox"
+                            value="C2H2"
+                            checked
+                        >
+                        C2H2
+                    </label>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="species-checkbox"
+                            value="C2H4"
+                            checked
+                        >
+                        C2H4
+                    </label>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="species-checkbox"
+                            value="CaCO3"
+                            checked
+                        >
+                        CaCO3
+                    </label>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="species-checkbox"
+                            value="CH3OH"
+                            checked
+                        >
+                        CH3OH
+                    </label>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="species-checkbox"
+                            value="HCN"
+                            checked
+                        >
+                        HCN
+                    </label>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="species-checkbox"
+                            value="HCOOH"
+                            checked
+                        >
+                        HCOOH
+                    </label>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="species-checkbox"
+                            value="HNO3"
+                            checked
+                        >
+                        HNO3
+                    </label>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="species-checkbox"
+                            value="CO"
+                            checked
+                        >
+                        CO
+                    </label>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="species-checkbox"
+                            value="CO2"
+                            checked
+                        >
+                        CO2
+                    </label>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="species-checkbox"
+                            value="NH3"
+                            checked
+                        >
+                        NH3
+                    </label>
+
+                    <label>
+                        <input
+                            type="checkbox"
+                            class="species-checkbox"
+                            value="SO2"
+                            checked
+                        >
+                        SO2
+                    </label>
+
+                </div>
             `;
+
+            L.DomEvent.disableClickPropagation(div);
 
             return div;
         }
-
     });
 
-    new Control({ position: "topright" }).addTo(map);
+    new Control({
+        position: "topright"
+    }).addTo(map);
 
-    setTimeout(() => {
 
-        document
-            .getElementById("btnAll")
-            .onclick = () => {
+    // --------------------------------------------------
+    // DAY / NIGHT
+    // --------------------------------------------------
 
-                currentPeriod = "ALL";
+    document.getElementById("btnAll").onclick = () => {
 
-                refreshMap();
+        currentPeriod = "ALL";
 
-            };
+        updatePeriodButtons();
 
-        document
-            .getElementById("btnDay")
-            .onclick = () => {
+        refreshMap();
+    };
 
-                currentPeriod = "DAY";
 
-                refreshMap();
+    document.getElementById("btnDay").onclick = () => {
 
-            };
+        currentPeriod = "DAY";
 
-        document
-            .getElementById("btnNight")
-            .onclick = () => {
+        updatePeriodButtons();
 
-                currentPeriod = "NIGHT";
+        refreshMap();
+    };
 
-                refreshMap();
 
-            };
+    document.getElementById("btnNight").onclick = () => {
 
-    });
+        currentPeriod = "NIGHT";
 
+        updatePeriodButtons();
+
+        refreshMap();
+    };
+
+
+    // --------------------------------------------------
+    // ESPÈCES
+    // --------------------------------------------------
+
+    document
+        .querySelectorAll(".species-checkbox")
+        .forEach(checkbox => {
+
+            checkbox.addEventListener(
+                "change",
+                updateSpeciesFilter
+            );
+
+        });
+
+
+    updatePeriodButtons();
+}
+
+function updatePeriodButtons() {
+
+    document
+        .getElementById("btnAll")
+        .classList.toggle(
+            "active",
+            currentPeriod === "ALL"
+        );
+
+    document
+        .getElementById("btnDay")
+        .classList.toggle(
+            "active",
+            currentPeriod === "DAY"
+        );
+
+    document
+        .getElementById("btnNight")
+        .classList.toggle(
+            "active",
+            currentPeriod === "NIGHT"
+        );
+}
+
+function updateSpeciesFilter() {
+
+    currentSpecies = Array.from(
+        document.querySelectorAll(
+            ".species-checkbox:checked"
+        )
+    ).map(
+        checkbox => checkbox.value
+    );
+
+    console.log("Espèces sélectionnées :", currentSpecies);
+
+    refreshMap();
 }
