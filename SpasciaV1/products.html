@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@400;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
 
     <!-- CSS -->
@@ -92,7 +92,180 @@
         
         <div id="map-container">
             <div id="map"></div>
-            <div id="map-controls"></div>
+
+            <aside id="map-controls" class="map-dashboard" aria-label="Filtres de la carte">
+                <div class="map-dashboard__header">
+                    <div>
+                        <span class="map-dashboard__eyebrow">IASI-PCA</span>
+                        <h2>Filtres</h2>
+                    </div>
+                    <!-- <span class="map-dashboard__status" aria-label="Carte active">
+                        <span class="status-dot"></span>
+                        LIVE
+                    </span> -->
+                </div>
+
+                <div class="map-dashboard__divider"></div>
+
+                <section class="filter-section" aria-labelledby="period-filter-title">
+                    <div class="filter-section__heading">
+                        <!-- <span class="filter-index"></span> -->
+                        <div>
+                            <!-- <span class="filter-kicker">OBSERVATION</span> -->
+                            <h3 id="period-filter-title">Période</h3>
+                        </div>
+                    </div>
+
+                    <div class="period-buttons" role="group" aria-label="Période d'observation">
+                        <button type="button" class="period-button active" id="btnAll" data-period="ALL">ALL</button>
+                        <button type="button" class="period-button" id="btnDay" data-period="DAY">DAY</button>
+                        <button type="button" class="period-button" id="btnNight" data-period="NIGHT">NIGHT</button>
+                    </div>
+                </section>
+
+                <section class="filter-section" aria-labelledby="species-filter-title">
+                    <div class="filter-section__heading">
+                        <!-- <span class="filter-index">02</span> -->
+                        <div>
+                            <!-- <span class="filter-kicker">SPECTRAL SIGNALS</span> -->
+                            <h3 id="species-filter-title">Espèces</h3>
+                        </div>
+                    </div>
+
+                    <div class="filter-toolbar">
+                        <span class="filter-count" id="species-count">11 / 11</span>
+                        <button type="button" class="filter-action" id="species-toggle" data-state="all">
+                            Tout désélectionner
+                        </button>
+                    </div>
+
+                    <div class="species-grid">
+                        <label class="species-option">
+                            <input type="checkbox" class="species-checkbox" value="C2H2" checked>
+                            <span class="species-checkmark"></span>
+                            <span class="species-name">C2H2</span>
+                        </label>
+                        <label class="species-option">
+                            <input type="checkbox" class="species-checkbox" value="C2H4" checked>
+                            <span class="species-checkmark"></span>
+                            <span class="species-name">C2H4</span>
+                        </label>
+                        <label class="species-option">
+                            <input type="checkbox" class="species-checkbox" value="CaCO3" checked>
+                            <span class="species-checkmark"></span>
+                            <span class="species-name">CaCO3</span>
+                        </label>
+                        <label class="species-option">
+                            <input type="checkbox" class="species-checkbox" value="CH3OH" checked>
+                            <span class="species-checkmark"></span>
+                            <span class="species-name">CH3OH</span>
+                        </label>
+                        <label class="species-option">
+                            <input type="checkbox" class="species-checkbox" value="HCN" checked>
+                            <span class="species-checkmark"></span>
+                            <span class="species-name">HCN</span>
+                        </label>
+                        <label class="species-option">
+                            <input type="checkbox" class="species-checkbox" value="HCOOH" checked>
+                            <span class="species-checkmark"></span>
+                            <span class="species-name">HCOOH</span>
+                        </label>
+                        <label class="species-option">
+                            <input type="checkbox" class="species-checkbox" value="HNO3" checked>
+                            <span class="species-checkmark"></span>
+                            <span class="species-name">HNO3</span>
+                        </label>
+                        <label class="species-option">
+                            <input type="checkbox" class="species-checkbox" value="CO" checked>
+                            <span class="species-checkmark"></span>
+                            <span class="species-name">CO</span>
+                        </label>
+                        <label class="species-option">
+                            <input type="checkbox" class="species-checkbox" value="CO2" checked>
+                            <span class="species-checkmark"></span>
+                            <span class="species-name">CO2</span>
+                        </label>
+                        <label class="species-option">
+                            <input type="checkbox" class="species-checkbox" value="NH3" checked>
+                            <span class="species-checkmark"></span>
+                            <span class="species-name">NH3</span>
+                        </label>
+                        <label class="species-option">
+                            <input type="checkbox" class="species-checkbox" value="SO2" checked>
+                            <span class="species-checkmark"></span>
+                            <span class="species-name">SO2</span>
+                        </label>
+                    </div>
+                </section>
+
+                <section class="filter-section" aria-labelledby="cluster-filter-title">
+                    <div class="filter-section__heading">
+                        <!-- <span class="filter-index">03</span> -->
+                        <div>
+                            <!-- <span class="filter-kicker">EVENT CLASSIFICATION</span> -->
+                            <h3 id="cluster-filter-title">Catégories</h3>
+                        </div>
+                    </div>
+
+                    <div class="cluster-legend">
+                        <button type="button" class="legend-item" data-type="fire" aria-pressed="true">
+                            <span class="legend-color" style="--cluster-color:#e41a1c"></span>
+                            <span>fire</span>
+                            <!-- <span class="legend-state">ON</span> -->
+                        </button>
+                        <button type="button" class="legend-item" data-type="others" aria-pressed="true">
+                            <span class="legend-color" style="--cluster-color:#377eb8"></span>
+                            <span>others</span>
+                            <!-- <span class="legend-state">ON</span> -->
+                        </button>
+                        <button type="button" class="legend-item" data-type="volcano" aria-pressed="true">
+                            <span class="legend-color" style="--cluster-color:#984ea3"></span>
+                            <span>volcano</span>
+                            <!-- <span class="legend-state">ON</span> -->
+                        </button>
+                        <button type="button" class="legend-item" data-type="fire_type_1" aria-pressed="true">
+                            <span class="legend-color" style="--cluster-color:#ff7f00"></span>
+                            <span>fire_type_1</span>
+                            <!-- <span class="legend-state">ON</span> -->
+                        </button>
+                        <button type="button" class="legend-item" data-type="voc" aria-pressed="true">
+                            <span class="legend-color" style="--cluster-color:#00ffff"></span>
+                            <span>voc</span>
+                            <!-- <span class="legend-state">ON</span> -->
+                        </button>
+                        <button type="button" class="legend-item" data-type="calcite" aria-pressed="true">
+                            <span class="legend-color" style="--cluster-color:#ff1493"></span>
+                            <span>calcite</span>
+                            <!-- <span class="legend-state">ON</span> -->
+                        </button>
+                        <button type="button" class="legend-item" data-type="Unclassified" aria-pressed="true">
+                            <span class="legend-color" style="--cluster-color:#666666"></span>
+                            <span>Unclassified</span>
+                            <!-- <span class="legend-state">ON</span> -->
+                        </button>
+                    </div>
+                </section>
+<!-- 
+                <div class="map-dashboard__summary">
+                    <div class="summary-item">
+                        <span class="summary-label">OBSERVATIONS</span>
+                        <strong id="filter-observation-count">—</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">SPECIES</span>
+                        <strong id="filter-species-count">11 / 11</strong>
+                    </div>
+                    <div class="summary-item">
+                        <span class="summary-label">CLASSES</span>
+                        <strong id="filter-cluster-count">7 / 7</strong>
+                    </div>
+                </div> -->
+
+                <button type="button" class="reset-filters" id="reset-filters">
+                    <span>↺</span>
+                    Réinitialiser les filtres
+                </button>
+            </aside>
         </div>
 
 

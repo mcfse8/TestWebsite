@@ -256,7 +256,7 @@ async function DisplayMap() {
     pointLayer = L.layerGroup().addTo(map);
     hullLayer = L.layerGroup().addTo(map);
 
-    addMapControls(map);
+    initMapFilters();
 
     // addClusterLegend(map);
 
@@ -264,6 +264,7 @@ async function DisplayMap() {
 
     // Affichage initial
     refreshMap();
+    updateFilterSummary();
 
     // Redessine la carte lorsque le zoom change
     map.on("zoomend", () => {
@@ -274,8 +275,15 @@ async function DisplayMap() {
 /* Filtrage */
 
 function filterData(data) {
+    
+    const latestDate = data.reduce((latest, point) => {
+        return new Date(point.date) > new Date(latest)
+            ? point.date
+            : latest;
+    }, data[0]?.date);
 
     return data.filter(point => {
+        const isLatestDate = point.date === latestDate;
 
         const okPeriod =
             currentPeriod === "ALL"
@@ -284,33 +292,24 @@ function filterData(data) {
         const okSpecies =
             currentSpecies.length === 0
             || currentSpecies.some(species => {
+                if (!point.point_indicators) return false;
 
-                if (!point.point_indicators) {
-                    return false;
-                }
-
-                const speciesInPoint =
-                    point.point_indicators
-                        .split(",")
-                        .map(indicator => {
-                            const name = indicator.split(":")[0];
-                            return name.split("_")[0];
-                        });
-                
-                console.log("species : ", species)
-                console.log("cluster_indicators : ", point.cluster_indicators)
-                console.log("speciesInPoint : ", speciesInPoint)
-                console.log("okSPecies : ", speciesInPoint.includes(species))
+                const speciesInPoint = point.point_indicators
+                    .split(",")
+                    .map(indicator => {
+                        const name = indicator.split(":")[0];
+                        return name.split("_")[0];
+                    });
 
                 return speciesInPoint.includes(species);
             });
 
-        const okTypes = currentClusterTypes.includes(point.cluster_category);
+        const okTypes =
+            currentClusterTypes.includes(point.cluster_category);
 
-        return okPeriod && okSpecies && okTypes;
+        return isLatestDate && okPeriod && okSpecies && okTypes;
     });
 }
-
 /* Refresh */
 
 function refreshMap() {
@@ -379,8 +378,6 @@ function createPopup(point) {
         <b>Date :</b> ${point.date} ${point["DAY/NIGHT"]}<br>
         <b>Cluster :</b> ${point.cluster_number}<br>
         <b>Catégorie :</b> ${point.cluster_category}<br>
-        <b>Pays :</b> ${point["Country/Sea"]}<br>
-        <b>Région :</b> ${point.Region}<br>
         <b>Latitude :</b> ${point.latitude}<br>
         <b>Longitude :</b> ${point.longitude}<br>
         <b>Indicateur(s) :</b> ${point.point_indicators}<br>
@@ -450,11 +447,15 @@ function drawClusterHulls(hullLayer, data) {
             onEachFeature(feature, layer) {
 
                 layer.bindPopup(`
-                    <b>Cycle : </b> ${points["DAY/NIGHT"]}<br>
+                    <b>Cycle :</b> ${points[0].date} ${points[0]["DAY/NIGHT"]}<br>
                     <b>Cluster :</b> ${clusterId}<br>
                     <b>Catégorie :</b> ${points[0].cluster_category}<br>
-                    <b>Nombre de points :</b> ${points.length}
+                    <b>Nombre de points :</b> ${points.length}<br>
+                    <b>Pays :</b> ${points[0]["Country/Sea"]}<br>
+                    <b>Région :</b> ${points[0].Region}<br>
+                    <b>Indicateur(s) :</b> ${points[0]["cluster_indicators"]}<br>
                 `);
+               
 
             }
 
@@ -501,266 +502,180 @@ function computeHull(points) {
     );
 }
 
-/* Filtres */ 
+/* Filtres ------------------------------------------------------------ */
 
-function addMapControls(map) {
-
-    const div = document.getElementById("map-controls");
-
-    div.innerHTML = `
-        <div class="filter-section">
-
-            <div class="filter-title">
-                Période
-            </div>
-
-            <div class="period-buttons">
-                <button id="btnAll">ALL</button>
-                <button id="btnDay">DAY</button>
-                <button id="btnNight">NIGHT</button>
-            </div>
-
-        </div>
-
-        <div class="filter-section">
-
-            <div class="filter-title">
-                Espèces
-            </div>
-
-            <label>
-                <input
-                    type="checkbox"
-                    class="species-checkbox"
-                    value="C2H2"
-                    checked
-                >
-                C2H2
-            </label>
-
-            <label>
-                <input
-                    type="checkbox"
-                    class="species-checkbox"
-                    value="C2H4"
-                    checked
-                >
-                C2H4
-            </label>
-
-            <label>
-                <input
-                    type="checkbox"
-                    class="species-checkbox"
-                    value="CaCO3"
-                    checked
-                >
-                CaCO3
-            </label>
-
-            <label>
-                <input
-                    type="checkbox"
-                    class="species-checkbox"
-                    value="CH3OH"
-                    checked
-                >
-                CH3OH
-            </label>
-
-            <label>
-                <input
-                    type="checkbox"
-                    class="species-checkbox"
-                    value="HCN"
-                    checked
-                >
-                HCN
-            </label>
-
-            <label>
-                <input
-                    type="checkbox"
-                    class="species-checkbox"
-                    value="HCOOH"
-                    checked
-                >
-                HCOOH
-            </label>
-
-            <label>
-                <input
-                    type="checkbox"
-                    class="species-checkbox"
-                    value="HNO3"
-                    checked
-                >
-                HNO3
-            </label>
-
-            <label>
-                <input
-                    type="checkbox"
-                    class="species-checkbox"
-                    value="CO"
-                    checked
-                >
-                CO
-            </label>
-
-            <label>
-                <input
-                    type="checkbox"
-                    class="species-checkbox"
-                    value="CO2"
-                    checked
-                >
-                CO2
-            </label>
-
-            <label>
-                <input
-                    type="checkbox"
-                    class="species-checkbox"
-                    value="NH3"
-                    checked
-                >
-                NH3
-            </label>
-
-            <label>
-                <input
-                    type="checkbox"
-                    class="species-checkbox"
-                    value="SO2"
-                    checked
-                >
-                SO2
-            </label>
-
-        </div>
-
-        <div class="filter-section">
-            <div class="filter-title">Types de cluster</div>
-            <div class="cluster-legend">
-                ${Object.entries(clusterColors).map(([type, color]) => `
-                    <div class="legend-item" data-type="${type}">
-                        <span class="legend-color" style="background:${color}"></span>
-                        ${type}
-                    </div>
-                `).join("")}
-            </div>
-        </div>
-    `;
-
-
-    // --------------------------------------------------
-    // DAY / NIGHT
-    // --------------------------------------------------
-
-    document.getElementById("btnAll").onclick = () => {
-
-        currentPeriod = "ALL";
-
-        updatePeriodButtons();
-
-        refreshMap();
-    };
-
-
-    document.getElementById("btnDay").onclick = () => {
-
-        currentPeriod = "DAY";
-
-        updatePeriodButtons();
-
-        refreshMap();
-    };
-
-
-    document.getElementById("btnNight").onclick = () => {
-
-        currentPeriod = "NIGHT";
-
-        updatePeriodButtons();
-
-        refreshMap();
-    };
-
-
-    // --------------------------------------------------
-    // ESPÈCES
-    // --------------------------------------------------
-
-    document
-        .querySelectorAll(".species-checkbox")
-        .forEach(checkbox => {
-
-            checkbox.addEventListener(
-                "change",
-                updateSpeciesFilter
-            );
-
+function initMapFilters() {
+    // Période : ALL / DAY / NIGHT
+    document.querySelectorAll("[data-period]").forEach(button => {
+        button.addEventListener("click", () => {
+            currentPeriod = button.dataset.period;
+            updatePeriodButtons();
+            refreshMap();
         });
+    });
 
-    // --------------------------------------------------
-    // TYPES
-    // --------------------------------------------------
+    // Espèces
+    document.querySelectorAll(".species-checkbox").forEach(checkbox => {
+        checkbox.addEventListener("change", updateSpeciesFilter);
+    });
 
+    // Types de cluster
     document.querySelectorAll(".legend-item").forEach(item => {
         item.addEventListener("click", () => {
             const type = item.dataset.type;
 
             if (currentClusterTypes.includes(type)) {
                 currentClusterTypes = currentClusterTypes.filter(t => t !== type);
-                item.classList.add("inactive");
             } else {
                 currentClusterTypes.push(type);
-                item.classList.remove("inactive");
             }
 
+            updateClusterFilterUI();
+            updateFilterSummary();
             refreshMap();
         });
     });
 
+    // Tout sélectionner / tout désélectionner
+    const speciesToggle = document.getElementById("species-toggle");
+    if (speciesToggle) {
+        speciesToggle.addEventListener("click", toggleAllSpecies);
+    }
+
+    // Reset
+    const resetButton = document.getElementById("reset-filters");
+    if (resetButton) {
+        resetButton.addEventListener("click", resetMapFilters);
+    }
+
     updatePeriodButtons();
+    updateSpeciesFilterUI();
+    updateClusterFilterUI();
+    updateFilterSummary();
 }
 
 function updatePeriodButtons() {
+    document.querySelectorAll("[data-period]").forEach(button => {
+        const active = button.dataset.period === currentPeriod;
 
-    document
-        .getElementById("btnAll")
-        .classList.toggle(
-            "active",
-            currentPeriod === "ALL"
-        );
-
-    document
-        .getElementById("btnDay")
-        .classList.toggle(
-            "active",
-            currentPeriod === "DAY"
-        );
-
-    document
-        .getElementById("btnNight")
-        .classList.toggle(
-            "active",
-            currentPeriod === "NIGHT"
-        );
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-pressed", String(active));
+    });
 }
 
 function updateSpeciesFilter() {
-
     currentSpecies = Array.from(
-        document.querySelectorAll(
-            ".species-checkbox:checked"
-        )
-    ).map(
-        checkbox => checkbox.value
+        document.querySelectorAll(".species-checkbox:checked")
+    ).map(checkbox => checkbox.value);
+
+    updateSpeciesFilterUI();
+    updateFilterSummary();
+    refreshMap();
+}
+
+function updateSpeciesFilterUI() {
+    const checkboxes = Array.from(
+        document.querySelectorAll(".species-checkbox")
     );
 
-    console.log("Espèces sélectionnées :", currentSpecies);
+    const selectedCount = checkboxes.filter(checkbox => checkbox.checked).length;
+    const totalCount = checkboxes.length;
 
+    const countEl = document.getElementById("species-count");
+    const summaryEl = document.getElementById("filter-species-count");
+    const toggleButton = document.getElementById("species-toggle");
+
+    if (countEl) {
+        countEl.textContent = `${selectedCount} / ${totalCount}`;
+    }
+
+    if (summaryEl) {
+        summaryEl.textContent = `${selectedCount} / ${totalCount}`;
+    }
+
+    if (toggleButton) {
+        const allSelected = selectedCount === totalCount;
+        toggleButton.dataset.state = allSelected ? "all" : "partial";
+        toggleButton.textContent = allSelected
+            ? "Tout désélectionner"
+            : "Tout sélectionner";
+    }
+}
+
+function toggleAllSpecies() {
+    const checkboxes = Array.from(
+        document.querySelectorAll(".species-checkbox")
+    );
+
+    const allSelected = checkboxes.every(checkbox => checkbox.checked);
+
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = !allSelected;
+    });
+
+    currentSpecies = checkboxes
+        .filter(checkbox => checkbox.checked)
+        .map(checkbox => checkbox.value);
+
+    updateSpeciesFilterUI();
+    updateFilterSummary();
+    refreshMap();
+}
+
+function updateClusterFilterUI() {
+    document.querySelectorAll(".legend-item").forEach(item => {
+        const active = currentClusterTypes.includes(item.dataset.type);
+
+        item.classList.toggle("active", active);
+        item.classList.toggle("inactive", !active);
+        item.setAttribute("aria-pressed", String(active));
+
+        const state = item.querySelector(".legend-state");
+        if (state) {
+            state.textContent = active ? "ON" : "OFF";
+        }
+    });
+}
+
+function updateFilterSummary() {
+    const observationCount = document.getElementById("filter-observation-count");
+    const speciesCount = document.getElementById("filter-species-count");
+    const clusterCount = document.getElementById("filter-cluster-count");
+
+    if (speciesCount) {
+        const totalSpecies = document.querySelectorAll(".species-checkbox").length;
+        speciesCount.textContent = `${currentSpecies.length} / ${totalSpecies}`;
+    }
+
+    if (clusterCount) {
+        clusterCount.textContent = `${currentClusterTypes.length} / ${Object.keys(clusterColors).length}`;
+    }
+
+    // allData est vide avant le chargement CSV : ne pas appeler filterData dans ce cas.
+    if (observationCount) {
+        if (allData.length > 0) {
+            observationCount.textContent = filterData(allData).length.toLocaleString("fr-FR");
+        } else {
+            observationCount.textContent = "—";
+        }
+    }
+}
+
+function resetMapFilters() {
+    currentPeriod = "ALL";
+    currentSpecies = [
+        "C2H2", "C2H4", "CaCO3", "CH3OH", "HCN", "HCOOH",
+        "HNO3", "CO", "CO2", "NH3", "SO2"
+    ];
+    currentClusterTypes = Object.keys(clusterColors);
+
+    document.querySelectorAll(".species-checkbox").forEach(checkbox => {
+        checkbox.checked = true;
+    });
+
+    updatePeriodButtons();
+    updateSpeciesFilterUI();
+    updateClusterFilterUI();
+    updateFilterSummary();
     refreshMap();
 }
