@@ -464,3 +464,26 @@ table.data-table tbody tr:hover { background: #eaf1f8; }
     .map-dashboard__divider,.map-dashboard__summary { margin-left:14px; margin-right:14px; }
     .reset-filters { width:calc(100% - 28px); margin-left:14px; margin-right:14px; }
 }
+
+.extrem-marker {
+    background: transparent;
+    border: none;
+}
+
+.extrem-marker span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 20px;
+    height: 20px;
+
+    font-family: Arial, sans-serif;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 20px;
+
+    text-shadow:
+        0 0 2px white,
+        0 0 2px white;
+}

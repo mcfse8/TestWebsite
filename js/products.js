@@ -186,7 +186,8 @@ const clusterColors = {
     fire_type_1: "#ff7f00",
     voc: "#00ffff",
     calcite : "#ff1493",
-    Unclassified : "#666666"
+    Unclassified : "#666666",
+    extrem : "#000000"
 };
 
 let map;
@@ -350,24 +351,48 @@ function drawPoints(pointLayer, data) {
 
         const color = getClusterColor(point.cluster_category);
 
-        L.circleMarker(
-            [
-                Number(point.latitude),
-                Number(point.longitude)
-            ],
-            {
-                radius: getPointRadius(),
-                color,
-                fillColor: color,
-                fillOpacity: 0.8,
-                weight: 1
-            }
-        )
-        .bindPopup(createPopup(point))
-        .addTo(pointLayer);
+        if (point.cluster_category === 'extrem') {
+
+            const starIcon = L.divIcon({
+                className: 'extrem-marker',
+                html: `<span style="color:${color}">*</span>`,
+                iconSize: [100, 100],
+                iconAnchor: [10, 10],
+                popupAnchor: [0, -10]
+            });
+
+            L.marker(
+                [
+                    Number(point.latitude),
+                    Number(point.longitude)
+                ],
+                {
+                    icon: starIcon
+                }
+            )
+            .bindPopup(createPopup(point))
+            .addTo(pointLayer);
+
+        } else {
+
+            L.circleMarker(
+                [
+                    Number(point.latitude),
+                    Number(point.longitude)
+                ],
+                {
+                    radius: getPointRadius(),
+                    color,
+                    fillColor: color,
+                    fillOpacity: 0.8,
+                    weight: 1
+                }
+            )
+            .bindPopup(createPopup(point))
+            .addTo(pointLayer);
+        }
 
     });
-
 }
 
 /* Popup */
