@@ -1,11 +1,32 @@
 /**
  * pagination.js
  * Navigation entre les pages du tableau de données (Products).
- * Dépend des variables globales `allRows`, `currentPage`, `rowsPerPage`
- * et de la fonction `renderDataTable` (définies dans products.js).
+ *
+ * Dépend des variables globales :
+ * `allRows`, `currentPage`, `rowsPerPage`
+ *
+ * et des fonctions :
+ * `renderDataTable`
+ * `getFilteredTableRows`
+ *
+ * définies dans products.js.
  */
 
 function renderDataTablePage() {
+
+  // Récupère les données après application des filtres
+  const filteredRows =
+    typeof getFilteredTableRows === "function"
+      ? getFilteredTableRows()
+      : allRows;
+
+  const totalPages =
+    Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
+
+  // Évite d'être sur une page inexistante après un filtrage
+  if (currentPage > totalPages) {
+    currentPage = totalPages;
+  }
 
   const start =
     (currentPage - 1) * rowsPerPage;
@@ -14,21 +35,24 @@ function renderDataTablePage() {
     start + rowsPerPage;
 
   const rows =
-    allRows.slice(start, end);
+    filteredRows.slice(start, end);
 
   renderDataTable(rows);
-
-  const totalPages =
-    Math.ceil(allRows.length / rowsPerPage);
 
   document.getElementById("page-info").textContent =
     `Page ${currentPage} / ${totalPages}`;
 }
 
+
 function nextPage() {
 
+  const filteredRows =
+    typeof getFilteredTableRows === "function"
+      ? getFilteredTableRows()
+      : allRows;
+
   const totalPages =
-    Math.ceil(allRows.length / rowsPerPage);
+    Math.max(1, Math.ceil(filteredRows.length / rowsPerPage));
 
   if (currentPage < totalPages) {
 
@@ -37,6 +61,7 @@ function nextPage() {
     renderDataTablePage();
   }
 }
+
 
 function previousPage() {
 

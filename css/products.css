@@ -188,6 +188,18 @@ table.data-table tbody tr:hover { background: #eaf1f8; }
     padding:20px 20px 16px;
 }
 
+.map-dashboard__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.map-data-date {
+    font-size: 0.85em;
+    font-weight: 400;
+    opacity: 0.7;
+}
+
 .map-dashboard__eyebrow,
 .filter-kicker,
 .summary-label {
@@ -486,4 +498,146 @@ table.data-table tbody tr:hover { background: #eaf1f8; }
     text-shadow:
         0 0 2px white,
         0 0 2px white;
+}
+
+/* =========================================================
+   FILTRES DU TABLEAU
+   ========================================================= */
+
+.table-filters {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.table-filter {
+    position: relative;
+}
+
+.table-filter-button {
+    min-width: 160px;
+    padding: 10px 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+
+    background: white;
+    border: 1px solid #d6d6d6;
+    border-radius: 6px;
+
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.table-filter-button:hover {
+    border-color: #999;
+}
+
+.table-filter-arrow {
+    font-size: 16px;
+}
+
+
+/* Menu déroulant */
+
+.table-filter-menu {
+    display: none;
+
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+
+    width: 240px;
+    max-height: 320px;
+
+    overflow-y: auto;
+
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+
+    z-index: 1000;
+}
+
+.table-filter.open .table-filter-menu {
+    display: block;
+}
+
+
+/* Boutons Tout sélectionner / Tout désélectionner */
+
+.table-filter-actions {
+    display: flex;
+    gap: 8px;
+
+    padding: 10px;
+
+    border-bottom: 1px solid #eee;
+}
+
+.table-filter-actions button {
+    border: none;
+    background: none;
+
+    font-size: 12px;
+    cursor: pointer;
+
+    padding: 0;
+}
+
+.table-filter-actions button:hover {
+    text-decoration: underline;
+}
+
+
+/* Liste des cases */
+
+.table-filter-options {
+    padding: 8px;
+}
+
+.table-filter-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    padding: 7px 6px;
+
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.table-filter-option:hover {
+    background: #f5f5f5;
+}
+
+.table-filter-option input {
+    cursor: pointer;
+}
+
+
+/* Bouton reset */
+
+.table-filter-reset {
+    padding: 10px 14px;
+
+    background: transparent;
+    border: 1px solid #d6d6d6;
+    border-radius: 6px;
+
+    font-family: inherit;
+    font-size: 14px;
+
+    cursor: pointer;
+}
+
+.table-filter-reset:hover {
+    background: #f5f5f5;
 }

@@ -27,6 +27,9 @@ let currentPage = 1;
 
 const rowsPerPage = 10;
 
+let selectedTableDates = new Set();
+let selectedTableCategories = new Set();
+
 async function loadMonitoringData(forceRefresh = false) {
 
   if (monitoringDataLoaded && !forceRefresh) {
@@ -61,6 +64,8 @@ async function loadMonitoringData(forceRefresh = false) {
     allRows = rows;
 
     currentPage = 1;
+
+    initTableFilters(allRows);
 
     renderDataTablePage();
 
@@ -150,7 +155,16 @@ function renderDataTable(rows) {
     return;
   }
 
-  const headers = Object.keys(rows[0]);
+  // Colonnes affichées dans le tableau
+  const headers = [
+    "date",    
+    "DAY/NIGHT",
+    "Country/Sea",
+    "Region",
+    "cluster_category",
+    "cluster_indicators",
+    "ndetection"
+  ];
 
   thead.innerHTML =
     `<tr>
@@ -160,7 +174,7 @@ function renderDataTable(rows) {
   tbody.innerHTML = rows.map(row => `
       <tr>
         ${headers.map(header =>
-          `<td>${escapeHtml(row[header])}</td>`
+          `<td>${escapeHtml(row[header] ?? "")}</td>`
         ).join("")}
       </tr>
   `).join("");
@@ -211,7 +225,7 @@ function createMap() {
     );
 
     const map = L.map("map", {
-        minZoom: 3,
+        minZoom: 2,
         maxBounds: bounds,
         maxBoundsViscosity: 1.0
     }).setView([46.5, 2.5], 6);
@@ -282,6 +296,14 @@ function filterData(data) {
             ? point.date
             : latest;
     }, data[0]?.date);
+
+    const mapDateElement = document.getElementById("map-data-date");
+
+    if (mapDateElement) {
+        mapDateElement.textContent = latestDate
+            ? new Date(latestDate).toLocaleDateString("fr-FR")
+            : "—";
+    }
 
     return data.filter(point => {
         const isLatestDate = point.date === latestDate;
@@ -703,4 +725,272 @@ function resetMapFilters() {
     updateClusterFilterUI();
     updateFilterSummary();
     refreshMap();
+}
+
+// ------------------------------------------------------------------
+// FILTRES DU TABLEAU
+// ------------------------------------------------------------------
+
+function initTableFilters(rows) {
+
+    if (!rows.length) return;
+
+    // Recherche des noms de colonnes
+    const headers = Object.keys(rows[0]);
+
+    // Adapte automatiquement les noms de colonnes
+    const dateColumn = headers.find(h =>
+        h.toLowerCase() === "date"
+    );
+
+    const categoryColumn = headers.find(h =>
+        ["category", "categorie", "cluster_category", "cluster category"]
+            .includes(h.toLowerCase())
+    );
+
+    if (!dateColumn) {
+        console.warn("Colonne Date introuvable");
+    }
+
+    if (!categoryColumn) {
+        console.warn("Colonne Catégorie introuvable");
+    }
+
+    // Dates disponibles
+    if (dateColumn) {
+        const dates = [...new Set(
+            rows
+                .map(row => row[dateColumn])
+                .filter(value => value !== undefined && value !== "")
+        )].sort();
+
+        selectedTableDates = new Set(dates);
+
+        renderTableFilterOptions(
+            "date-filter-options",
+            dates,
+            "date"
+        );
+    }
+
+    // Catégories disponibles
+    if (categoryColumn) {
+        const categories = [...new Set(
+            rows
+                .map(row => row[categoryColumn])
+                .filter(value => value !== undefined && value !== "")
+        )].sort();
+
+        selectedTableCategories = new Set(categories);
+
+        renderTableFilterOptions(
+            "category-filter-options",
+            categories,
+            "category"
+        );
+    }
+
+    setupTableFilterEvents(
+        dateColumn,
+        categoryColumn
+    );
+}
+
+
+function renderTableFilterOptions(containerId, values, type) {
+
+    const container = document.getElementById(containerId);
+
+    if (!container) return;
+
+    container.innerHTML = values.map((value, index) => {
+
+        const id = `${type}-filter-${index}`;
+
+        return `
+            <label class="table-filter-option" for="${id}">
+                <input
+                    type="checkbox"
+                    id="${id}"
+                    data-filter-type="${type}"
+                    value="${escapeHtml(value)}"
+                    checked
+                >
+                <span>${escapeHtml(value)}</span>
+            </label>
+        `;
+
+    }).join("");
+}
+
+
+function setupTableFilterEvents(dateColumn, categoryColumn) {
+
+    // Ouverture / fermeture des menus
+    document.querySelectorAll(".table-filter-button").forEach(button => {
+
+        button.addEventListener("click", event => {
+
+            event.stopPropagation();
+
+            const filter = button.closest(".table-filter");
+
+            document.querySelectorAll(".table-filter").forEach(other => {
+                if (other !== filter) {
+                    other.classList.remove("open");
+                }
+            });
+
+            filter.classList.toggle("open");
+        });
+
+    });
+
+
+    // Empêche le menu de se fermer lorsqu'on clique dedans
+    document.querySelectorAll(".table-filter-menu").forEach(menu => {
+        menu.addEventListener("click", event => {
+            event.stopPropagation();
+        });
+    });
+
+
+    // Cases à cocher
+    document.querySelectorAll("[data-filter-type]").forEach(checkbox => {
+
+        checkbox.addEventListener("change", () => {
+
+            updateSelectedTableFilters();
+
+            currentPage = 1;
+
+            renderDataTablePage();
+
+        });
+
+    });
+
+
+    // Tout sélectionner / désélectionner
+    document.querySelectorAll("[data-filter-action]").forEach(button => {
+
+        button.addEventListener("click", () => {
+
+            const type = button.dataset.filter;
+            const action = button.dataset.filterAction;
+
+            document
+                .querySelectorAll(`[data-filter-type="${type}"]`)
+                .forEach(checkbox => {
+
+                    checkbox.checked = action === "all";
+
+                });
+
+            updateSelectedTableFilters();
+
+            currentPage = 1;
+
+            renderDataTablePage();
+
+        });
+
+    });
+
+
+    // Reset
+    const resetButton = document.getElementById("table-filter-reset");
+
+    if (resetButton) {
+
+        resetButton.addEventListener("click", () => {
+
+            document
+                .querySelectorAll("[data-filter-type]")
+                .forEach(checkbox => {
+
+                    checkbox.checked = true;
+
+                });
+
+            updateSelectedTableFilters();
+
+            currentPage = 1;
+
+            renderDataTablePage();
+
+        });
+
+    }
+
+
+    // Clic à l'extérieur
+    document.addEventListener("click", () => {
+
+        document
+            .querySelectorAll(".table-filter")
+            .forEach(filter => {
+                filter.classList.remove("open");
+            });
+
+    });
+
+}
+
+
+function updateSelectedTableFilters() {
+
+    selectedTableDates = new Set(
+        Array.from(
+            document.querySelectorAll(
+                '[data-filter-type="date"]:checked'
+            )
+        ).map(input => input.value)
+    );
+
+
+    selectedTableCategories = new Set(
+        Array.from(
+            document.querySelectorAll(
+                '[data-filter-type="category"]:checked'
+            )
+        ).map(input => input.value)
+    );
+
+}
+
+
+function getFilteredTableRows() {
+
+    if (!allRows.length) {
+        return [];
+    }
+
+    const headers = Object.keys(allRows[0]);
+
+    const dateColumn = headers.find(h =>
+        h.toLowerCase() === "date"
+    );
+
+    const categoryColumn = headers.find(h =>
+        ["category", "categorie", "cluster_category", "cluster category"]
+            .includes(h.toLowerCase())
+    );
+
+
+    return allRows.filter(row => {
+
+        const dateOK =
+            !dateColumn ||
+            selectedTableDates.size === 0 ||
+            selectedTableDates.has(row[dateColumn]);
+
+        const categoryOK =
+            !categoryColumn ||
+            selectedTableCategories.size === 0 ||
+            selectedTableCategories.has(row[categoryColumn]);
+
+        return dateOK && categoryOK;
+
+    });
 }

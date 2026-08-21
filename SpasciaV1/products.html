@@ -75,13 +75,13 @@
             </p>
         </section>
 
-        <div class="article-header">
+        <!-- <div class="article-header">
             <h1>Cartes</h1>
             <p class="article-intro">
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus.
             Suspendisse lectus tortor, dignissim sit amet, adipiscing nec, ultricies sed, dolor.
             </p>
-        </div>
+        </div> -->
 
         <!-- <figure class="article-media">
             <img src="EtnaIASI.gif" alt="Description du GIF" class="gif-product">
@@ -95,9 +95,9 @@
 
             <aside id="map-controls" class="map-dashboard" aria-label="Filtres de la carte">
                 <div class="map-dashboard__header">
-                    <div>
-                        <span class="map-dashboard__eyebrow">IASI-PCA</span>
-                        <h2>Filtres</h2>
+                    <div class="map-dashboard__eyebrow">
+                        <span>IASI-PCA</span>
+                        <span class="map-data-date" id="map-data-date">—</span>
                     </div>
                     <!-- <span class="map-dashboard__status" aria-label="Carte active">
                         <span class="status-dot"></span>
@@ -275,7 +275,7 @@
 
 
 
-        <div class="text-spascia">
+        <!-- <div class="text-spascia">
             <p>
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus.
             Suspendisse lectus tortor, dignissim sit amet, adipiscing nec,
@@ -289,13 +289,73 @@
             orci luctus et ultrices posuere cubilia Curae; Aliquam nibh. Mauris ac mauris sed pede
             pellentesque fermentum. Maecenas adipiscing ante non diam sodales hendrerit.
             </p>
-        </div>
+        </div> -->
 
         </article>
 
         <!-- ── DATA TABLE ── -->
         <section class="data-table-section">
         <h2>Données de monitoring</h2>
+
+        <div class="table-filters">
+
+            <!-- FILTRE DATE -->
+            <div class="table-filter" id="date-filter">
+                <button type="button" class="table-filter-button">
+                    <span>Date</span>
+                    <span class="table-filter-arrow">⌄</span>
+                </button>
+
+                <div class="table-filter-menu">
+                    <div class="table-filter-actions">
+                        <button type="button" data-filter-action="all" data-filter="date">
+                            Tout sélectionner
+                        </button>
+
+                        <button type="button" data-filter-action="none" data-filter="date">
+                            Tout désélectionner
+                        </button>
+                    </div>
+
+                    <div id="date-filter-options" class="table-filter-options">
+                        <!-- Généré automatiquement par JS -->
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- FILTRE CATÉGORIE -->
+            <div class="table-filter" id="category-filter">
+                <button type="button" class="table-filter-button">
+                    <span>Catégorie</span>
+                    <span class="table-filter-arrow">⌄</span>
+                </button>
+
+                <div class="table-filter-menu">
+                    <div class="table-filter-actions">
+                        <button type="button" data-filter-action="all" data-filter="category">
+                            Tout sélectionner
+                        </button>
+
+                        <button type="button" data-filter-action="none" data-filter="category">
+                            Tout désélectionner
+                        </button>
+                    </div>
+
+                    <div id="category-filter-options" class="table-filter-options">
+                        <!-- Généré automatiquement par JS -->
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- RESET -->
+            <button type="button" class="table-filter-reset" id="table-filter-reset">
+                ↺ Réinitialiser
+            </button>
+
+        </div>
+
         <div class="data-table-meta">
             <span class="data-table-status" id="data-table-status">Chargement des données…</span>
             <button class="btn-refresh" id="data-table-refresh-btn" onclick="loadMonitoringData(true)"> <!-- /!\ charger par défaut et pas juste au clic /!\ -->
